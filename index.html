@@ -1,0 +1,880 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Creator Workflow Hub</title>
+  <style>
+    :root{
+      --bg: #0b1220;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.62);
+      --done: #22c55e;
+      --ready: #facc15;
+      --start: #ef4444;
+      --accent: #a78bfa;
+      --accent2:#22d3ee;
+      --shadow: 0 24px 80px rgba(0,0,0,.45);
+      --r: 18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background:
+        radial-gradient(1200px 900px at 10% -10%, rgba(167,139,250,.25), transparent 60%),
+        radial-gradient(1200px 900px at 110% 10%, rgba(34,211,238,.18), transparent 55%),
+        radial-gradient(900px 700px at 50% 120%, rgba(34,197,94,.10), transparent 55%),
+        linear-gradient(180deg, #070b15 0%, #0b1220 60%, #070b15 100%);
+      overflow-x:hidden;
+    }
+
+    .shell{
+      max-width:1180px;
+      margin:0 auto;
+      padding:24px 16px 40px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+      flex-wrap:wrap;
+      margin-bottom:16px;
+    }
+
+    .brand h1{
+      margin:0;
+      font-size:28px;
+      line-height:1.1;
+      letter-spacing:-.03em;
+    }
+    .brand p{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      max-width:60ch;
+    }
+
+    .stats{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .pill{
+      padding:10px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.06);
+      border:1px solid var(--stroke);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      font-size:13px;
+      color:var(--muted);
+      box-shadow:0 10px 30px rgba(0,0,0,.2);
+    }
+    .pill b{ color:var(--text); }
+
+    .layout{
+      display:grid;
+      grid-template-columns:240px 1fr;
+      gap:16px;
+    }
+
+    @media (max-width: 900px){
+      .layout{ grid-template-columns:1fr; }
+    }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.05));
+      border:1px solid var(--stroke);
+      border-radius:var(--r);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .sidebar{
+      padding:14px;
+      height:max-content;
+      position:sticky;
+      top:16px;
+    }
+
+    @media (max-width: 900px){
+      .sidebar{ position:static; }
+    }
+
+    .menuTitle{
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      margin:2px 0 12px;
+    }
+
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .nav button{
+      width:100%;
+      text-align:left;
+      justify-content:space-between;
+    }
+
+    .nav .navbtn.active{
+      background:linear-gradient(90deg, rgba(167,139,250,.95), rgba(34,211,238,.85));
+      color:#06101a;
+      border-color:transparent;
+    }
+
+    .main{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .section{
+      display:none;
+    }
+    .section.active{
+      display:block;
+    }
+
+    .sectionHead{
+      padding:16px 16px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.03);
+    }
+    .sectionHead h2{
+      margin:0;
+      font-size:18px;
+      letter-spacing:-.02em;
+    }
+    .sectionHead p{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .body{
+      padding:16px;
+    }
+
+    .toolbar{
+      display:grid;
+      grid-template-columns:1.2fr 1fr;
+      gap:14px;
+      margin-bottom:14px;
+    }
+
+    @media (max-width: 900px){
+      .toolbar{ grid-template-columns:1fr; }
+    }
+
+    .miniCard{
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      padding:14px;
+    }
+
+    .miniCard h3{
+      margin:0 0 10px;
+      font-size:13px;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+      color:rgba(255,255,255,.78);
+    }
+
+    textarea,input,select{
+      width:100%;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.14);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+      padding:11px 12px;
+      font-size:13px;
+      outline:none;
+    }
+
+    textarea{
+      min-height:150px;
+      resize:vertical;
+      font-family:var(--mono);
+    }
+
+    textarea:focus,input:focus,select:focus{
+      border-color:rgba(34,211,238,.55);
+      box-shadow:0 0 0 4px rgba(34,211,238,.16);
+    }
+
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    button{
+      border:0;
+      border-radius:14px;
+      padding:10px 12px;
+      font-weight:800;
+      cursor:pointer;
+      color:var(--text);
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+      transition:transform .08s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    button:hover{
+      background:rgba(255,255,255,.11);
+      border-color:rgba(255,255,255,.18);
+    }
+    button:active{ transform:scale(.99); }
+
+    .primary{
+      background:linear-gradient(90deg, rgba(167,139,250,.95), rgba(34,211,238,.85));
+      border-color:transparent;
+      color:#06101a;
+      box-shadow:0 14px 40px rgba(167,139,250,.18);
+    }
+
+    .danger{
+      background:rgba(239,68,68,.14);
+      border-color:rgba(239,68,68,.28);
+    }
+
+    .small{
+      padding:8px 10px;
+      border-radius:12px;
+      font-size:12px;
+    }
+
+    .hint{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.5;
+    }
+
+    .topActions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+
+    .list{
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.10);
+      overflow:hidden;
+      background:rgba(255,255,255,.03);
+    }
+
+    .item{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      padding:14px 12px;
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+    .item:first-child{ border-top:0; }
+
+    .left{
+      flex:1;
+      min-width:0;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .statusDot{
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      margin-top:5px;
+      flex:0 0 auto;
+      box-shadow:0 0 0 4px rgba(255,255,255,.04);
+    }
+    .status-not-started{ background:var(--start); }
+    .status-ready-to-post{ background:var(--ready); }
+    .status-done{ background:var(--done); }
+
+    .name{
+      font-size:15px;
+      font-weight:900;
+      letter-spacing:-.01em;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .meta{
+      margin-top:4px;
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.45;
+    }
+
+    .right{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      flex:0 0 auto;
+    }
+
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:900;
+      border:1px solid rgba(255,255,255,.12);
+      white-space:nowrap;
+    }
+    .badge.done{
+      color:#d9ffe6;
+      background:rgba(34,197,94,.18);
+      border-color:rgba(34,197,94,.30);
+    }
+    .badge.ready{
+      color:#fff7c2;
+      background:rgba(250,204,21,.16);
+      border-color:rgba(250,204,21,.30);
+    }
+    .badge.start{
+      color:#ffd7d7;
+      background:rgba(239,68,68,.16);
+      border-color:rgba(239,68,68,.30);
+    }
+
+    .empty{
+      padding:22px;
+      text-align:center;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .dateGrid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:14px;
+    }
+    @media (max-width: 780px){
+      .dateGrid{ grid-template-columns:1fr; }
+    }
+
+    .fieldGroup{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-bottom:12px;
+    }
+
+    .fieldGroup label{
+      font-size:12px;
+      color:rgba(255,255,255,.76);
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+    }
+
+    .dateCard h3{
+      margin:0 0 12px;
+      font-size:16px;
+    }
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:18px;
+      transform:translateX(-50%);
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.12);
+      color:rgba(255,255,255,.92);
+      padding:10px 12px;
+      border-radius:999px;
+      box-shadow:0 18px 60px rgba(0,0,0,.45);
+      backdrop-filter:blur(10px);
+      font-weight:800;
+      font-size:13px;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s ease, transform .2s ease;
+      z-index:50;
+    }
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Creator Workflow Hub</h1>
+        <p>Mini website for tracking new models, update targets, and your Nextcloud / Telegram checkpoints. Everything saves in this browser.</p>
+      </div>
+      <div class="stats">
+        <div class="pill"><span>New</span> <b id="statNew">0</b></div>
+        <div class="pill"><span>Update</span> <b id="statUpdate">0</b></div>
+        <div class="pill"><span>Total Done</span> <b id="statDone">0</b></div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="card sidebar">
+        <div class="menuTitle">Menu</div>
+        <div class="nav">
+          <button class="navbtn active" data-section="newSection">New <span id="countNew">0</span></button>
+          <button class="navbtn" data-section="updateSection">Update <span id="countUpdate">0</span></button>
+          <button class="navbtn" data-section="otherSection">Other</button>
+        </div>
+        <div class="hint" style="margin-top:14px;">
+          Status colors:<br>
+          <span style="color:#22c55e;">● Green</span> = Done<br>
+          <span style="color:#facc15;">● Yellow</span> = Ready to post<br>
+          <span style="color:#ef4444;">● Red</span> = Not started yet
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="card section active" id="newSection">
+          <div class="sectionHead">
+            <div>
+              <h2>New Models</h2>
+              <p>Put new OnlyFans models here, edit them, and track whether they are not started, ready to post, or done.</p>
+            </div>
+          </div>
+          <div class="body">
+            <div class="toolbar">
+              <div class="miniCard">
+                <h3>Add new models</h3>
+                <textarea id="newBulkInput" placeholder="one model per line&#10;model one&#10;model two&#10;model three"></textarea>
+                <div class="row">
+                  <button class="primary" id="btnAddNew">Add to New</button>
+                  <button id="btnCopyNew">Copy New Names</button>
+                </div>
+                <div class="hint">Duplicates auto-skip. Empty lines are ignored.</div>
+              </div>
+              <div class="miniCard">
+                <h3>Search and bulk actions</h3>
+                <input id="searchNew" type="text" placeholder="Search new models..." />
+                <div class="row">
+                  <button class="small" id="btnNewDoneAll">Mark all done</button>
+                  <button class="small danger" id="btnNewClearDone">Clear done</button>
+                </div>
+              </div>
+            </div>
+            <div class="list" id="newList"></div>
+          </div>
+        </section>
+
+        <section class="card section" id="updateSection">
+          <div class="sectionHead">
+            <div>
+              <h2>Update Models</h2>
+              <p>Use this page for models that already exist but need to be refreshed because the content is outdated.</p>
+            </div>
+          </div>
+          <div class="body">
+            <div class="toolbar">
+              <div class="miniCard">
+                <h3>Add update targets</h3>
+                <textarea id="updateBulkInput" placeholder="one model per line&#10;model to refresh&#10;old creator post"></textarea>
+                <div class="row">
+                  <button class="primary" id="btnAddUpdate">Add to Update</button>
+                  <button id="btnCopyUpdate">Copy Update Names</button>
+                </div>
+                <div class="hint">Same workflow as New, but this page is just for models that need updates.</div>
+              </div>
+              <div class="miniCard">
+                <h3>Search and bulk actions</h3>
+                <input id="searchUpdate" type="text" placeholder="Search update models..." />
+                <div class="row">
+                  <button class="small" id="btnUpdateDoneAll">Mark all done</button>
+                  <button class="small danger" id="btnUpdateClearDone">Clear done</button>
+                </div>
+              </div>
+            </div>
+            <div class="list" id="updateList"></div>
+          </div>
+        </section>
+
+        <section class="card section" id="otherSection">
+          <div class="sectionHead">
+            <div>
+              <h2>Other</h2>
+              <p>Editable checkpoint dates for Nextcloud and Telegram videos.</p>
+            </div>
+          </div>
+          <div class="body">
+            <div class="dateGrid">
+              <div class="miniCard dateCard">
+                <h3>Nextcloud</h3>
+                <div class="fieldGroup">
+                  <label for="nextcloudLatest">Latest file checked</label>
+                  <input id="nextcloudLatest" type="text" placeholder="02/07/2026" />
+                </div>
+                <div class="fieldGroup">
+                  <label for="nextcloudOldest">Oldest file checked</label>
+                  <input id="nextcloudOldest" type="text" placeholder="08/08/2025" />
+                </div>
+                <button class="primary" id="btnSaveNextcloud">Save Nextcloud Dates</button>
+              </div>
+
+              <div class="miniCard dateCard">
+                <h3>Telegram Videos</h3>
+                <div class="fieldGroup">
+                  <label for="telegramLastChecked">Last video checked</label>
+                  <input id="telegramLastChecked" type="text" placeholder="05/05/2025" />
+                </div>
+                <button class="primary" id="btnSaveTelegram">Save Telegram Date</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Saved</div>
+
+  <script>
+    const STORAGE_KEY = "creator_workflow_hub_v2";
+
+    const defaultState = {
+      newModels: [],
+      updateModels: [],
+      other: {
+        nextcloudLatest: "",
+        nextcloudOldest: "",
+        telegramLastChecked: ""
+      }
+    };
+
+    let state = structuredClone(defaultState);
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg){
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(() => t.classList.remove("show"), 1300);
+    }
+
+    function normalizeName(s){
+      return (s || "").replace(/\s+/g, " ").trim();
+    }
+
+    function makeId(){
+      return "m_" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+    }
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if(raw){
+          const parsed = JSON.parse(raw);
+          state = {
+            newModels: Array.isArray(parsed.newModels) ? parsed.newModels : [],
+            updateModels: Array.isArray(parsed.updateModels) ? parsed.updateModels : [],
+            other: {
+              nextcloudLatest: parsed.other?.nextcloudLatest || "",
+              nextcloudOldest: parsed.other?.nextcloudOldest || "",
+              telegramLastChecked: parsed.other?.telegramLastChecked || ""
+            }
+          };
+        }
+      }catch{
+        state = structuredClone(defaultState);
+      }
+      hydrateOtherFields();
+      renderAll();
+    }
+
+    function getStatusLabel(status){
+      if(status === "done") return "Done";
+      if(status === "ready-to-post") return "Ready to post";
+      return "Not started";
+    }
+
+    function getStatusClass(status){
+      if(status === "done") return { dot:"status-done", badge:"done" };
+      if(status === "ready-to-post") return { dot:"status-ready-to-post", badge:"ready" };
+      return { dot:"status-not-started", badge:"start" };
+    }
+
+    function countDone(arr){
+      return arr.filter(item => item.status === "done").length;
+    }
+
+    function addModelsToBucket(bucketName, textareaId){
+      const raw = $(textareaId).value.split("\n");
+      const incoming = raw.map(normalizeName).filter(Boolean);
+      if(incoming.length === 0){
+        toast("Nothing to add");
+        return;
+      }
+
+      const existing = new Set(state[bucketName].map(m => m.name.toLowerCase()));
+      let added = 0;
+      let skipped = 0;
+
+      for(const name of incoming){
+        const key = name.toLowerCase();
+        if(existing.has(key)){
+          skipped++;
+          continue;
+        }
+        state[bucketName].unshift({
+          id: makeId(),
+          name,
+          status: "not-started",
+          createdAt: Date.now()
+        });
+        existing.add(key);
+        added++;
+      }
+
+      $(textareaId).value = "";
+      save();
+      toast(`Added ${added}${skipped ? ` • Skipped ${skipped}` : ""}`);
+    }
+
+    function updateItemStatus(bucketName, id, status){
+      const item = state[bucketName].find(x => x.id === id);
+      if(!item) return;
+      item.status = status;
+      save();
+      toast("Status updated");
+    }
+
+    function editItem(bucketName, id){
+      const item = state[bucketName].find(x => x.id === id);
+      if(!item) return;
+      const next = prompt("Edit model name:", item.name);
+      if(next === null) return;
+      const cleaned = normalizeName(next);
+      if(!cleaned){
+        toast("Name cannot be empty");
+        return;
+      }
+      const clash = state[bucketName].some(x => x.id !== id && x.name.toLowerCase() === cleaned.toLowerCase());
+      if(clash){
+        toast("Duplicate name already exists");
+        return;
+      }
+      item.name = cleaned;
+      save();
+      toast("Model updated");
+    }
+
+    function deleteItem(bucketName, id){
+      state[bucketName] = state[bucketName].filter(x => x.id !== id);
+      save();
+      toast("Deleted");
+    }
+
+    function clearDone(bucketName){
+      const before = state[bucketName].length;
+      state[bucketName] = state[bucketName].filter(x => x.status !== "done");
+      save();
+      toast(before === state[bucketName].length ? "No done models" : "Cleared done");
+    }
+
+    function markAllDone(bucketName){
+      if(state[bucketName].length === 0){
+        toast("No models");
+        return;
+      }
+      state[bucketName].forEach(item => item.status = "done");
+      save();
+      toast("All marked done");
+    }
+
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+      }catch{
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      toast("Copied");
+    }
+
+    function copyBucket(bucketName){
+      if(state[bucketName].length === 0){
+        toast("Nothing to copy");
+        return;
+      }
+      copyText(state[bucketName].map(x => x.name).join("\n"));
+    }
+
+    function renderBucket(bucketName, listId, searchId){
+      const q = normalizeName($(searchId).value).toLowerCase();
+      const filtered = q
+        ? state[bucketName].filter(item => item.name.toLowerCase().includes(q))
+        : state[bucketName];
+
+      const list = $(listId);
+      if(filtered.length === 0){
+        list.innerHTML = `<div class="empty">${state[bucketName].length ? "No matches found." : "No models here yet."}</div>`;
+        return;
+      }
+
+      list.innerHTML = filtered.map(item => {
+        const css = getStatusClass(item.status);
+        const label = getStatusLabel(item.status);
+        return `
+          <div class="item">
+            <div class="left">
+              <div class="statusDot ${css.dot}"></div>
+              <div style="min-width:0;">
+                <div class="name">${escapeHtml(item.name)}</div>
+                <div class="meta">${label} • added ${new Date(item.createdAt).toLocaleDateString()}</div>
+              </div>
+            </div>
+            <div class="right">
+              <span class="badge ${css.badge}">${label}</span>
+              <button class="small" data-edit="${bucketName}|${item.id}">Edit</button>
+              <button class="small" data-status="${bucketName}|${item.id}|not-started">Not started</button>
+              <button class="small" data-status="${bucketName}|${item.id}|ready-to-post">In progress</button>
+              <button class="small" data-status="${bucketName}|${item.id}|done">Mark off</button>
+              <button class="small danger" data-delete="${bucketName}|${item.id}">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      list.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const [bucket, id] = btn.getAttribute("data-edit").split("|");
+          editItem(bucket, id);
+        });
+      });
+
+      list.querySelectorAll("[data-status]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const [bucket, id, status] = btn.getAttribute("data-status").split("|");
+          updateItemStatus(bucket, id, status);
+        });
+      });
+
+      list.querySelectorAll("[data-delete]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const [bucket, id] = btn.getAttribute("data-delete").split("|");
+          deleteItem(bucket, id);
+        });
+      });
+    }
+
+    function renderStats(){
+      $("statNew").textContent = state.newModels.length;
+      $("statUpdate").textContent = state.updateModels.length;
+      $("statDone").textContent = countDone(state.newModels) + countDone(state.updateModels);
+      $("countNew").textContent = state.newModels.length;
+      $("countUpdate").textContent = state.updateModels.length;
+    }
+
+    function hydrateOtherFields(){
+      $("nextcloudLatest").value = state.other.nextcloudLatest;
+      $("nextcloudOldest").value = state.other.nextcloudOldest;
+      $("telegramLastChecked").value = state.other.telegramLastChecked;
+    }
+
+    function renderAll(){
+      renderStats();
+      renderBucket("newModels", "newList", "searchNew");
+      renderBucket("updateModels", "updateList", "searchUpdate");
+      hydrateOtherFields();
+    }
+
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function switchSection(sectionId){
+      document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active"));
+      document.querySelectorAll(".navbtn").forEach(btn => btn.classList.remove("active"));
+      $(sectionId).classList.add("active");
+      document.querySelector(`[data-section="${sectionId}"]`).classList.add("active");
+    }
+
+    // Navigation
+    document.querySelectorAll(".navbtn").forEach(btn => {
+      btn.addEventListener("click", () => switchSection(btn.getAttribute("data-section")));
+    });
+
+    // New section
+    $("btnAddNew").addEventListener("click", () => addModelsToBucket("newModels", "newBulkInput"));
+    $("btnCopyNew").addEventListener("click", () => copyBucket("newModels"));
+    $("btnNewDoneAll").addEventListener("click", () => markAllDone("newModels"));
+    $("btnNewClearDone").addEventListener("click", () => clearDone("newModels"));
+    $("searchNew").addEventListener("input", renderAll);
+
+    // Update section
+    $("btnAddUpdate").addEventListener("click", () => addModelsToBucket("updateModels", "updateBulkInput"));
+    $("btnCopyUpdate").addEventListener("click", () => copyBucket("updateModels"));
+    $("btnUpdateDoneAll").addEventListener("click", () => markAllDone("updateModels"));
+    $("btnUpdateClearDone").addEventListener("click", () => clearDone("updateModels"));
+    $("searchUpdate").addEventListener("input", renderAll);
+
+    // Other section
+    $("btnSaveNextcloud").addEventListener("click", () => {
+      state.other.nextcloudLatest = $("nextcloudLatest").value.trim();
+      state.other.nextcloudOldest = $("nextcloudOldest").value.trim();
+      save();
+      toast("Nextcloud dates saved");
+    });
+
+    $("btnSaveTelegram").addEventListener("click", () => {
+      state.other.telegramLastChecked = $("telegramLastChecked").value.trim();
+      save();
+      toast("Telegram date saved");
+    });
+
+    load();
+  </script>
+</body>
+</html>
