@@ -438,7 +438,7 @@
     <div class="topbar">
       <div class="brand">
         <h1>Creator Workflow Hub</h1>
-        <p>Mini website for tracking new models, update targets, and your Nextcloud / Telegram checkpoints. Everything saves in this browser.</p>
+        <p>Mini website for tracking new models, update targets, and your Nextcloud / Telegram checkpoints. Syncs to the cloud so your data follows you everywhere.</p>
       </div>
       <div class="stats">
         <div class="pill"><span>New</span> <b id="statNew">0</b></div>
@@ -566,7 +566,22 @@
   <div class="toast" id="toast">Saved</div>
 
   <script>
+    // =============================================
+    //  JSONBin.io CONFIG — fill these in!
+    // =============================================
+    // 1. Go to https://jsonbin.io  → Sign up (free)
+    // 2. Go to API Keys → copy your X-Master-Key
+    // 3. Create a new bin: click "Create" with this JSON:
+    //    {"newModels":[],"updateModels":[],"other":{"nextcloudLatest":"","nextcloudOldest":"","telegramLastChecked":""}}
+    // 4. Copy the Bin ID from the URL (looks like: 665a1f...)
+    //
+    const JSONBIN_API_KEY = "$2a$10$UmanzGIm1xcg47zQM4O0U.KlmiJbKn3/rq48T2aIy8zV/28lXXgrK";
+    const JSONBIN_BIN_ID  = "69acdb28ae596e708f6b5a15";
+    // =============================================
+
     const STORAGE_KEY = "creator_workflow_hub_v2";
+    const JSONBIN_BASE = "https://api.jsonbin.io/v3/b";
+    const USE_CLOUD = JSONBIN_API_KEY && JSONBIN_BIN_ID;
 
     const defaultState = {
       newModels: [],
@@ -579,6 +594,7 @@
     };
 
     let state = structuredClone(defaultState);
+    let saveTimeout = null;
 
     const $ = (id) => document.getElementById(id);
 
@@ -597,31 +613,95 @@
       return "m_" + Math.random().toString(36).slice(2, 10);
     }
 
-    function save(){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      renderAll();
+    // ---------- Cloud save (debounced) ----------
+    async function cloudSave(){
+      if(!USE_CLOUD) return;
+      try{
+        await fetch(`${JSONBIN_BASE}/${JSONBIN_BIN_ID}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Master-Key": JSONBIN_API_KEY
+          },
+          body: JSON.stringify(state)
+        });
+      }catch(err){
+        console.warn("Cloud save failed, localStorage still works:", err);
+      }
     }
 
-    function load(){
+    async function cloudLoad(){
+      if(!USE_CLOUD) return null;
+      try{
+        const res = await fetch(`${JSONBIN_BASE}/${JSONBIN_BIN_ID}/latest`, {
+          headers: { "X-Master-Key": JSONBIN_API_KEY }
+        });
+        const json = await res.json();
+        return json.record || null;
+      }catch(err){
+        console.warn("Cloud load failed, falling back to localStorage:", err);
+        return null;
+      }
+    }
+
+    function save(){
+      // Always keep localStorage as instant cache
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderAll();
+
+      // Debounce cloud save (waits 800ms after last change)
+      if(USE_CLOUD){
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(cloudSave, 800);
+      }
+    }
+
+    async function load(){
+      // 1. Load from localStorage first (instant)
+      let loaded = false;
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
         if(raw){
-          const parsed = JSON.parse(raw);
-          state = {
-            newModels: Array.isArray(parsed.newModels) ? parsed.newModels : [],
-            updateModels: Array.isArray(parsed.updateModels) ? parsed.updateModels : [],
-            other: {
-              nextcloudLatest: parsed.other?.nextcloudLatest || "",
-              nextcloudOldest: parsed.other?.nextcloudOldest || "",
-              telegramLastChecked: parsed.other?.telegramLastChecked || ""
-            }
-          };
+          applyParsed(JSON.parse(raw));
+          loaded = true;
         }
-      }catch{
+      }catch{}
+
+      if(!loaded){
         state = structuredClone(defaultState);
       }
       hydrateOtherFields();
       renderAll();
+
+      // 2. Then try cloud (may be newer if you used another device)
+      if(USE_CLOUD){
+        const cloud = await cloudLoad();
+        if(cloud){
+          applyParsed(cloud);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          hydrateOtherFields();
+          renderAll();
+        }
+      }
+
+      // Show connection status
+      if(USE_CLOUD){
+        toast("Synced with cloud ☁️");
+      } else {
+        toast("Local-only mode (add API key for cloud sync)");
+      }
+    }
+
+    function applyParsed(parsed){
+      state = {
+        newModels: Array.isArray(parsed.newModels) ? parsed.newModels : [],
+        updateModels: Array.isArray(parsed.updateModels) ? parsed.updateModels : [],
+        other: {
+          nextcloudLatest: parsed.other?.nextcloudLatest || "",
+          nextcloudOldest: parsed.other?.nextcloudOldest || "",
+          telegramLastChecked: parsed.other?.telegramLastChecked || ""
+        }
+      };
     }
 
     function getStatusLabel(status){
